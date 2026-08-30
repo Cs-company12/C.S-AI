@@ -1559,7 +1559,7 @@ function handleUserInput(raw, image){
 
   const t = text.toLowerCase();
 
-  if(/samee\s+sawir|sawir\s+ii\s+samee|ii\s+sawir|abuur\s+sawir|sawir\s+abuur|generate\s+(an\s+|a\s+)?image|create\s+(an\s+|a\s+)?image|draw\s+(me\s+)?a|draw\s+an|paint\s+(me\s+)?a|make\s+(me\s+)?(an\s+|a\s+)?image/i.test(t)){
+  if(/\bsawir(ro)?\b|\bimage\b|\bpicture\b|\bphoto\b/i.test(t)){
     askAI(text, null, true);
     return;
   }
