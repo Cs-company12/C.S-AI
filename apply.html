@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="so">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>C.S Company — Codso Nidaam</title>
+<meta name="description" content="Codso nidaam maamul oo loogu talagalay isbitaalka, farmashiyaha, ama ganacsigaaga.">
+<meta name="theme-color" content="#0E1215">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg0:#0E1215; --bg1:#161C20; --bg2:#1D252A; --bg3:#242D33;
+    --border:#2A3339; --border-soft:#232B30;
+    --text0:#EEEAE1; --text1:#B7B2A7; --text2:#7C8288;
+    --gold:#C9A15A; --gold-dim:#8A6F3D; --gold-bg:#2A2417;
+    --green:#71AE7F; --green-bg:#182A1D;
+    --red:#C1594F; --red-bg:#2A1917;
+    --radius:12px;
+    --serif:'Fraunces', serif; --sans:'Inter', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg0);color:var(--text0);font-family:var(--sans);-webkit-font-smoothing:antialiased;min-height:100%;}
+  body{display:flex;flex-direction:column;align-items:center;padding:32px 16px 60px;}
+  ::selection{background:var(--gold-bg);color:var(--gold);}
+
+  .wrap{width:100%;max-width:520px;}
+
+  .brand{display:flex;flex-direction:column;align-items:center;gap:12px;margin-bottom:28px;text-align:center;}
+  .brand-mark{
+    width:56px;height:56px;border-radius:14px;
+    background:linear-gradient(160deg,var(--gold),var(--gold-dim));
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--serif);font-weight:700;font-size:22px;color:#1B1508;
+  }
+  .brand h1{font-family:var(--serif);font-size:22px;font-weight:600;margin:0;}
+  .brand p{margin:0;color:var(--text2);font-size:13px;max-width:360px;}
+
+  .card{background:var(--bg1);border:1px solid var(--border-soft);border-radius:var(--radius);padding:26px 24px;}
+
+  label{display:block;font-size:11.5px;color:var(--text2);margin:0 0 6px;text-transform:uppercase;letter-spacing:.03em;}
+  .field{margin-bottom:16px;}
+  input, select{
+    width:100%;background:var(--bg2);border:1px solid var(--border);color:var(--text0);
+    padding:11px 13px;border-radius:9px;font-size:14.5px;font-family:var(--sans);outline:none;
+  }
+  input:focus, select:focus{border-color:var(--gold-dim);}
+  input::placeholder{color:var(--text2);}
+
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  @media(max-width:480px){.row2{grid-template-columns:1fr;}}
+
+  .submitBtn{
+    width:100%;background:var(--gold);border:none;color:#1B1508;font-weight:700;
+    padding:13px;border-radius:9px;font-size:15px;margin-top:6px;cursor:pointer;
+    transition:background .15s, transform .1s;
+  }
+  .submitBtn:hover{background:#DAAF6A;}
+  .submitBtn:active{transform:scale(.98);}
+  .submitBtn:disabled{opacity:.55;cursor:default;}
+
+  .err{color:var(--red);font-size:12.5px;margin-top:10px;display:none;}
+  .err.show{display:block;}
+
+  /* Success screen */
+  #successView{display:none;text-align:center;}
+  #successView .checkmark{
+    width:64px;height:64px;border-radius:50%;background:var(--green-bg);color:var(--green);
+    display:flex;align-items:center;justify-content:center;font-size:30px;margin:0 auto 18px;
+  }
+  #successView h2{font-family:var(--serif);font-size:20px;margin:0 0 8px;}
+  #successView p{color:var(--text1);font-size:14px;line-height:1.6;margin:0 0 22px;}
+  .ref{font-family:'JetBrains Mono', monospace;color:var(--gold);font-size:13px;}
+  .downloadBtn{
+    display:inline-flex;align-items:center;gap:8px;background:var(--gold);color:#1B1508;
+    border:none;padding:12px 22px;border-radius:9px;font-weight:700;font-size:14px;cursor:pointer;
+    text-decoration:none;
+  }
+  .downloadBtn:hover{background:#DAAF6A;}
+  .again{display:block;margin-top:16px;color:var(--text2);font-size:12.5px;background:none;border:none;cursor:pointer;text-decoration:underline;}
+
+  .foot{margin-top:22px;text-align:center;color:var(--text2);font-size:11.5px;}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="brand">
+    <div class="brand-mark">CS</div>
+    <h1>C.S Company</h1>
+    <p>Codso nidaam maamul oo loogu talagalay isbitaalka, farmashiyaha, xarunta caafimaadka, ama ganacsigaaga — waxaan kula soo xiriiri doonaa 24-48 saacadood gudahood.</p>
+  </div>
+
+  <div class="card">
+    <form id="applyForm">
+      <div class="field">
+        <label>Magacaaga</label>
+        <input id="f_name" required placeholder="Tusaale: Ahmed Xasan">
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>Dalka</label>
+          <input id="f_country" required placeholder="Soomaaliya">
+        </div>
+        <div class="field">
+          <label>Taleefan ama Email</label>
+          <input id="f_contact" required placeholder="+252...">
+        </div>
+      </div>
+      <div class="field">
+        <label>Nooca Ganacsigaaga</label>
+        <input id="f_business" required placeholder="Hospital, Clinic, Pharmacy, School...">
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>Nooca System-ka aad rabto</label>
+          <input id="f_system" placeholder="HMS, Pharmacy System...">
+        </div>
+        <div class="field">
+          <label>Goorma ayaad rabtaa</label>
+          <input id="f_timeline" placeholder="Isbuucan, bishan...">
+        </div>
+      </div>
+      <div class="field">
+        <label>Budget-ka (ikhtiyaari)</label>
+        <input id="f_budget" placeholder="Tusaale: $500 - $1000">
+      </div>
+      <button type="submit" class="submitBtn" id="submitBtn">Dir Codsiga</button>
+      <div class="err" id="errBox"></div>
+    </form>
+
+    <div id="successView">
+      <div class="checkmark">✓</div>
+      <h2>Codsigaaga waa la helay!</h2>
+      <p>Waxaan ku kaydinay diiwaankayaga. Reference-kaagu waa <span class="ref" id="refNum"></span>.<br>Agaasimaha C.S Company ayaa kula soo xiriiri doona si dhow.</p>
+      <button class="downloadBtn" id="downloadPdfBtn">⬇ Soo deji PDF Xaqiijin</button>
+      <button class="again" id="againBtn">Codso mid kale</button>
+    </div>
+  </div>
+
+  <div class="foot">C.S Company — Muqdisho, Soomaaliya</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+const SUPA_URL = "https://jqsiqkwtpihryvceovxt.supabase.co";
+const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impxc2lxa3d0cGlocnl2Y2Vvdnh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc5OTY1ODIsImV4cCI6MjEwMzU3MjU4Mn0.xLZC4jxTqD9lsXFGpXnd2FDOn1PAo_pcczebQvSKjY4";
+const sb = window.supabase.createClient(SUPA_URL, SUPA_KEY);
+
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+function shortRef(id){ return (id || '').replace(/-/g,'').slice(0,8).toUpperCase(); }
+
+let lastSubmission = null;
+
+document.getElementById('applyForm').addEventListener('submit', async function(e){
+  e.preventDefault();
+  const errBox = document.getElementById('errBox');
+  errBox.classList.remove('show');
+  const submitBtn = document.getElementById('submitBtn');
+
+  const row = {
+    name: document.getElementById('f_name').value.trim(),
+    country: document.getElementById('f_country').value.trim(),
+    contact: document.getElementById('f_contact').value.trim(),
+    business: document.getElementById('f_business').value.trim(),
+    system_type: document.getElementById('f_system').value.trim(),
+    timeline: document.getElementById('f_timeline').value.trim(),
+    budget: document.getElementById('f_budget').value.trim(),
+    status: 'pending',
+    source: 'public',
+    created_at: todayStr()
+  };
+
+  if(!row.name || !row.country || !row.contact || !row.business){
+    errBox.textContent = 'Fadlan buuxi dhammaan meelaha lagama maarmaanka ah.';
+    errBox.classList.add('show');
+    return;
+  }
+
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Diraya...';
+
+  const { data, error } = await sb.from('csco_customers').insert(row).select().single();
+
+  submitBtn.disabled = false;
+  submitBtn.textContent = 'Dir Codsiga';
+
+  if(error){
+    console.error(error);
+    errBox.textContent = 'Khalad ayaa dhacay. Fadlan hubi internetka oo isku day mar kale.';
+    errBox.classList.add('show');
+    return;
+  }
+
+  lastSubmission = data;
+  document.getElementById('refNum').textContent = shortRef(data.id);
+  document.getElementById('applyForm').style.display = 'none';
+  document.getElementById('successView').style.display = 'block';
+});
+
+document.getElementById('againBtn').addEventListener('click', function(){
+  document.getElementById('applyForm').reset();
+  document.getElementById('applyForm').style.display = 'block';
+  document.getElementById('successView').style.display = 'none';
+  lastSubmission = null;
+});
+
+document.getElementById('downloadPdfBtn').addEventListener('click', async function(){
+  if(!lastSubmission) return;
+  const { PDFDocument, rgb, StandardFonts } = window.PDFLib;
+  const doc = await PDFDocument.create();
+  const page = doc.addPage([595, 842]); // A4
+  const font = await doc.embedFont(StandardFonts.Helvetica);
+  const bold = await doc.embedFont(StandardFonts.HelveticaBold);
+  const gold = rgb(0.788, 0.631, 0.353);
+  const dark = rgb(0.09, 0.07, 0.03);
+  const gray = rgb(0.45, 0.45, 0.47);
+  let y = 780;
+
+  // Header bar
+  page.drawRectangle({ x: 0, y: 792, width: 595, height: 50, color: rgb(0.086, 0.11, 0.125) });
+  page.drawText('C.S Company', { x: 50, y: 810, size: 18, font: bold, color: gold });
+  page.drawText('Xaqiijinta Codsiga', { x: 50, y: 795, size: 10, font, color: rgb(0.9,0.88,0.85) });
+
+  y = 750;
+  page.drawText('Reference: ' + shortRef(lastSubmission.id), { x: 50, y, size: 11, font: bold, color: dark });
+  y -= 16;
+  page.drawText('Taariikhda: ' + lastSubmission.created_at, { x: 50, y, size: 10, font, color: gray });
+  y -= 34;
+
+  const rows = [
+    ['Magaca', lastSubmission.name],
+    ['Dalka', lastSubmission.country],
+    ['Taleefan/Email', lastSubmission.contact],
+    ['Ganacsiga', lastSubmission.business],
+    ['Nooca System-ka', lastSubmission.system_type || '-'],
+    ['Goorma', lastSubmission.timeline || '-'],
+    ['Budget-ka', lastSubmission.budget || '-'],
+    ['Xaalad', 'Sugaya (Pending)']
+  ];
+
+  rows.forEach(function(r){
+    page.drawText(r[0] + ':', { x: 50, y, size: 11, font: bold, color: dark });
+    page.drawText(String(r[1] || '-'), { x: 220, y, size: 11, font, color: dark });
+    y -= 24;
+  });
+
+  y -= 16;
+  page.drawLine({ start: {x:50, y}, end: {x:545, y}, thickness: 0.5, color: rgb(0.85,0.85,0.85) });
+  y -= 24;
+
+  const note = 'Mahadsanid codsigaaga. Kooxda C.S Company ayaa dib kula soo xiriiri doonta 24-48 saacadood gudahood si aad wax badan uga hadasho baahida nidaamkaaga.';
+  const words = note.split(' ');
+  let line = '';
+  words.forEach(function(w){
+    const test = line ? line + ' ' + w : w;
+    if(font.widthOfTextAtSize(test, 10.5) > 495){
+      page.drawText(line, { x: 50, y, size: 10.5, font, color: gray });
+      y -= 15;
+      line = w;
+    } else {
+      line = test;
+    }
+  });
+  if(line){ page.drawText(line, { x: 50, y, size: 10.5, font, color: gray }); y -= 15; }
+
+  page.drawText('C.S Company — Muqdisho, Soomaaliya', { x: 50, y: 40, size: 9, font, color: gray });
+
+  const pdfBytes = await doc.save();
+  const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'CS-Company-Codsi-' + shortRef(lastSubmission.id) + '.pdf';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
+});
+</script>
+</body>
+</html>
