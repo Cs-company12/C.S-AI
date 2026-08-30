@@ -1833,7 +1833,7 @@ async function generateImage(prompt){
     if(/GEMINI_API_KEY/i.test(raw)){
       userMsg = 'AI-gu weli lama dejinin. Ku dar GEMINI_API_KEY sida Supabase secret.';
     } else if(/RESOURCE_EXHAUSTED|quota/i.test(raw)){
-      userMsg = 'Xadka bilaashka ah ee sawir-abuurka waa la gaadhay. Isku day mar kale berri.';
+      userMsg = 'Sawir-abuurku (Gemini image) ma laha xad bilaash ah gebi ahaanba — billing ayaa loo baahan yahay maalinta koowaad (~$0.067 hal sawir). Ma aha mid "berri" wax iska bedeli doona. Tag console.cloud.google.com, ku dar billing project-kaaga API key-gu ku jiro, kadibna isku day mar kale.';
     } else if(/not found|NOT_FOUND|is not supported|not available/i.test(raw)){
       userMsg = 'Model-ka sawir-abuurka lama heli karo account-kaaga hadda. Waxaa laga yaabaa in loo baahdo billing dheeraad ah.';
     }
