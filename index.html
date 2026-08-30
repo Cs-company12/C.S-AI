@@ -405,6 +405,7 @@
   }
   #sendBtn:active{transform:scale(.96);}
   #sendBtn:disabled{opacity:.45;cursor:default;transform:none;}
+  #genImageBtn.active{background:var(--accent-soft);border-color:rgba(34,197,94,0.45);color:var(--accent-dim);}
 
   /* ---------- GENERIC PANELS ---------- */
   .panel{padding:24px 28px;overflow-y:auto;flex:1;}
@@ -924,6 +925,7 @@
           <div id="inputRow">
             <input type="file" id="imageInput" accept="image/*" style="display:none;">
             <button id="attachBtn" class="btn" title="Add image" type="button">📎</button>
+            <button id="genImageBtn" class="btn" title="Generate an image" type="button">🎨</button>
             <input id="chatInput" type="text" placeholder="Ask anything...">
             <button id="sendBtn" type="button">Send</button>
           </div>
@@ -1767,11 +1769,90 @@ document.getElementById('removeImageBtn').onclick = function(){
   document.getElementById('imageInput').value = '';
 };
 
+let imageGenMode = false;
+const genImageBtn = document.getElementById('genImageBtn');
+if(genImageBtn){
+  genImageBtn.onclick = function(){
+    imageGenMode = !imageGenMode;
+    genImageBtn.classList.toggle('active', imageGenMode);
+    const inp = document.getElementById('chatInput');
+    if(inp) inp.placeholder = imageGenMode ? 'Sharax sawirka aad rabto in la sameeyo...' : 'Ask anything...';
+  };
+}
+
+async function generateImage(prompt){
+  addMsg(prompt, 'user');
+  showTyping();
+  logChat('user', '[Sawir Codsi] ' + prompt);
+  const sendBtn = document.getElementById('sendBtn');
+  if(sendBtn) sendBtn.disabled = true;
+  try{
+    const res = await sb.functions.invoke('ai-partner', {
+      body: {
+        mode: 'image',
+        system: 'Waxaad tahay CS AI. Samee sawir sax ah, tayo sare leh, oo si dhab ah ula jaanqaadaya codsiga user-ka.',
+        messages: [{ role:'user', content: prompt }]
+      }
+    });
+    if(res.error){
+      let detail = res.error.message || 'Khalad aan la garanayn.';
+      if(res.error.context && typeof res.error.context.json === 'function'){
+        try{
+          const errBody = await res.error.context.json();
+          if(errBody && errBody.error){
+            detail = (typeof errBody.error === 'string') ? errBody.error : (errBody.error.message || JSON.stringify(errBody.error));
+          }
+        }catch(readErr){ /* body ma ahayn JSON */ }
+      }
+      throw new Error(detail);
+    }
+    const data = res.data || {};
+    if(data.error){
+      const msg = (typeof data.error === 'string') ? data.error : (data.error.message || JSON.stringify(data.error));
+      throw new Error(msg);
+    }
+    const candidate = (data.candidates && data.candidates[0]) || null;
+    const parts = (candidate && candidate.content && candidate.content.parts) || [];
+    const textPart = parts.filter(function(p){ return typeof p.text === 'string'; }).map(function(p){ return p.text; }).join('\n').trim();
+    const imagePart = parts.find(function(p){ return p.inlineData && p.inlineData.data; });
+    hideTyping();
+    if(imagePart){
+      const mime = imagePart.inlineData.mimeType || 'image/png';
+      const dataUrl = 'data:' + mime + ';base64,' + imagePart.inlineData.data;
+      addMsg(textPart || 'Waa kan sawirka aad codsatay:', 'ai', null, dataUrl);
+      logChat('assistant', textPart || '[Sawir la sameeyay]');
+    } else {
+      addMsg(textPart || 'Waan ka xumahay, sawir kuma samayn karo hadda. Isku day mar kale.', 'ai');
+      logChat('assistant', textPart || '[Sawir lama samayn]');
+    }
+  }catch(err){
+    console.error('generateImage failed', err);
+    hideTyping();
+    const raw = (err && err.message) ? err.message : '';
+    let userMsg = raw ? ('Khalad: ' + raw) : 'Khalad ayaa dhacay marka sawirka la samaynayay.';
+    if(/GEMINI_API_KEY/i.test(raw)){
+      userMsg = 'AI-gu weli lama dejinin. Ku dar GEMINI_API_KEY sida Supabase secret.';
+    } else if(/RESOURCE_EXHAUSTED|quota/i.test(raw)){
+      userMsg = 'Xadka bilaashka ah ee sawir-abuurka waa la gaadhay. Isku day mar kale berri.';
+    } else if(/not found|NOT_FOUND|is not supported|not available/i.test(raw)){
+      userMsg = 'Model-ka sawir-abuurka lama heli karo account-kaaga hadda. Waxaa laga yaabaa in loo baahdo billing dheeraad ah.';
+    }
+    addMsg(userMsg, 'ai');
+  }finally{
+    if(sendBtn) sendBtn.disabled = false;
+  }
+}
+
 document.getElementById('sendBtn').onclick = function(){
   if(!currentUser){ return; }
   const inp = document.getElementById('chatInput');
   const text = inp.value.trim();
   if(!text && !pendingImage) return;
+  if(imageGenMode && text){
+    inp.value='';
+    generateImage(text);
+    return;
+  }
   const img = pendingImage;
   pendingImage = null;
   document.getElementById('imagePreviewRow').style.display = 'none';
