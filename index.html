@@ -1463,7 +1463,7 @@ async function askAI(question, image, wantImageGen){
 
     if(wantImageGen){
       invokeBody.mode = 'image';
-      invokeBody.messages = [{ role:'user', content: question }];
+      invokeBody.messages = [userMsg];
     } else {
       const context = buildBusinessContext();
       const userName = currentUser && currentUser.name ? currentUser.name : 'friend';
@@ -1548,7 +1548,7 @@ function handleUserInput(raw, image){
   addMsg(text, 'user', null, image ? image.previewUrl : null);
 
   if(image){
-    askAI(text || 'Fadlan sharax sawirkan oo ii sheeg waxa uu ka koobnaa.', image);
+    askAI(text || 'Fadlan sharax sawirkan oo ii sheeg waxa uu ka koobnaa.', image, true);
     return;
   }
 
