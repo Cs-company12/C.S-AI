@@ -409,6 +409,10 @@
   #sendBtn:active{transform:scale(.96);}
   #sendBtn:disabled{opacity:.45;cursor:default;transform:none;}
   #genImageBtn.active{background:var(--accent-soft);border-color:rgba(34,197,94,0.45);color:var(--accent-dim);}
+  .lightbox-overlay{display:none;position:fixed;inset:0;background:rgba(9,12,17,0.90);z-index:200;align-items:center;justify-content:center;padding:28px;}
+  .lightbox-overlay.show{display:flex;}
+  .lightbox-overlay img{max-width:100%;max-height:100%;border-radius:14px;box-shadow:0 24px 70px rgba(0,0,0,0.55);}
+  #lightboxCloseBtn{position:fixed;top:20px;right:20px;width:42px;height:42px;border-radius:50%;background:#FFFFFF;border:none;font-size:18px;color:var(--text0);cursor:pointer;box-shadow:0 8px 20px rgba(0,0,0,0.3);}
 
   /* ---------- GENERIC PANELS ---------- */
   .panel{padding:24px 28px;overflow-y:auto;flex:1;}
@@ -839,6 +843,11 @@
   <div class="splash-mark"><img src="icon-192.png" alt="C.S Company"></div>
   <div class="splash-ring"></div>
   <div class="splash-text" id="splashText">CS AI</div>
+</div>
+
+<div id="imageLightbox" class="lightbox-overlay">
+  <img id="lightboxImg" src="" alt="sawir">
+  <button id="lightboxCloseBtn" type="button">✕</button>
 </div>
 
 <div id="installToast">
@@ -1391,7 +1400,8 @@ function addMsg(text, who, chips, imageUrl, isGeneratedImage){
     const img = document.createElement('img');
     img.src = imageUrl;
     const size = isGeneratedImage ? '280px' : '220px';
-    img.style.cssText = 'max-width:'+size+';max-height:'+size+';border-radius:10px;display:block;' + (text ? 'margin-bottom:6px;' : '');
+    img.style.cssText = 'max-width:'+size+';max-height:'+size+';border-radius:10px;display:block;cursor:zoom-in;' + (text ? 'margin-bottom:6px;' : '');
+    img.onclick = function(){ openImageLightbox(imageUrl); };
     bub.appendChild(img);
     if(isGeneratedImage){
       const dl = document.createElement('a');
@@ -1423,6 +1433,28 @@ function addMsg(text, who, chips, imageUrl, isGeneratedImage){
   chatLog.appendChild(wrap);
   chatLog.scrollTop = chatLog.scrollHeight;
 }
+
+function openImageLightbox(url){
+  const overlay = document.getElementById('imageLightbox');
+  const img = document.getElementById('lightboxImg');
+  if(!overlay || !img) return;
+  img.src = url;
+  overlay.classList.add('show');
+}
+function closeImageLightbox(){
+  const overlay = document.getElementById('imageLightbox');
+  if(overlay) overlay.classList.remove('show');
+}
+(function(){
+  const overlay = document.getElementById('imageLightbox');
+  const closeBtn = document.getElementById('lightboxCloseBtn');
+  if(closeBtn) closeBtn.onclick = closeImageLightbox;
+  if(overlay){
+    overlay.addEventListener('click', function(e){
+      if(e.target.id === 'imageLightbox'){ closeImageLightbox(); }
+    });
+  }
+})();
 
 function showTyping(){
   hideTyping();
@@ -1787,9 +1819,10 @@ async function generateImage(prompt){
   if(sendBtn) sendBtn.disabled = true;
   try{
     // Adeeg 100% bilaash ah, aan API key ama billing lagama baahnayn (Pollinations.ai / Flux).
-    const encoded = encodeURIComponent(prompt.trim());
+    const enhancedPrompt = prompt.trim() + ', high quality, detailed, sharp focus';
+    const encoded = encodeURIComponent(enhancedPrompt);
     const seed = Math.floor(Math.random() * 1000000);
-    const imageUrl = 'https://image.pollinations.ai/prompt/' + encoded + '?width=768&height=768&nologo=true&model=flux&seed=' + seed;
+    const imageUrl = 'https://image.pollinations.ai/prompt/' + encoded + '?width=1024&height=1024&nologo=true&model=flux&enhance=true&seed=' + seed;
 
     await new Promise(function(resolve, reject){
       const testImg = new Image();
