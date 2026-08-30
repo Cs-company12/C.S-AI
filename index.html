@@ -368,8 +368,6 @@
   .auth-form input:focus{border-color:rgba(47, 111, 237, 0.55);background:#FFFFFF;box-shadow:0 0 0 4px rgba(47, 111, 237, 0.12);}
   .auth-actions{display:flex;gap:12px;margin-top:16px;}
   .auth-actions .btn{flex:1;padding:12px 16px;font-size:13.5px;}
-  #switchModeBtn{background:#FFFFFF;border:1px solid var(--line);color:var(--text1);transition:all .2s ease;}
-  #switchModeBtn:hover{border-color:rgba(34, 197, 94, 0.40);background:var(--accent-bg);color:var(--accent-dim);}
   #authMessage{min-height:18px;font-size:12px;color:var(--red);margin-top:2px;}
   .logout-btn{
     margin-top:12px;width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:#FFFFFF;color:var(--text1);transition:all .2s ease;
@@ -684,7 +682,6 @@
     .auth-form input{padding:11px 13px;font-size:15px;border-radius:12px;}
     .auth-actions{flex-direction:column;gap:10px;}
     .auth-actions .btn{padding:10px 13px;font-size:12.5px;border-radius:11px;font-weight:600;}
-    #switchModeBtn{padding:10px 13px;}
     .logout-btn{padding:9px 11px;border-radius:11px;}
   }
 
@@ -844,25 +841,15 @@
   <div class="auth-card">
     <div class="auth-header">
       <h3 id="authTitle">Welcome</h3>
-      <div class="auth-pill" id="authModeLabel">Login</div>
     </div>
     <div id="authMessage"></div>
     <div class="auth-form">
-      <div id="authNameWrap" style="display:none;">
-        <label for="authName">Your name</label>
-        <input id="authName" type="text" placeholder="Enter your full name" autocomplete="name">
-      </div>
-      <div>
-        <label for="authPhone">Phone number</label>
-        <input id="authPhone" type="tel" placeholder="e.g. 0612345678" autocomplete="username">
-      </div>
-      <div>
-        <label for="authPassword">Password</label>
-        <input id="authPassword" type="password" placeholder="Enter your password" autocomplete="current-password">
+      <div id="authNameWrap">
+        <label for="authName">Your name (optional)</label>
+        <input id="authName" type="text" placeholder="Enter your name (optional)" autocomplete="name">
       </div>
       <div class="auth-actions">
-        <button class="btn primary" id="authSubmitBtn" type="button">Login</button>
-        <button class="btn" id="switchModeBtn" type="button">Create account</button>
+        <button class="btn primary" id="authSubmitBtn" type="button">Continue</button>
       </div>
     </div>
   </div>
@@ -948,9 +935,7 @@
 const SUPA_URL = "https://jqsiqkwtpihryvceovxt.supabase.co";
 const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impxc2lxa3d0cGlocnl2Y2Vvdnh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc5OTY1ODIsImV4cCI6MjEwMzU3MjU4Mn0.xLZC4jxTqD9lsXFGpXnd2FDOn1PAo_pcczebQvSKjY4";
 const sb = window.supabase.createClient(SUPA_URL, SUPA_KEY);
-const ACCOUNTS_KEY = 'csai_accounts_v1';
-const ACTIVE_ACCOUNT_KEY = 'csai_active_account_v1';
-const AUTH_EMAIL_SUFFIX = '@csai.app';
+const LOCAL_USER_KEY = 'csai_local_user_v1';
 
 let customers = [];
 let projects  = [];
@@ -959,43 +944,29 @@ let settings  = { owner:'CS AI', dev:0, support:0, acc:0 };
 let dataReady = false;
 let currentUser = null;
 let currentChatSession = null;
-let authMode = 'login';
 let appInitialized = false;
 
 function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
 function todayStr(){ return new Date().toISOString().slice(0,10); }
 function daysAgo(n){ const d = new Date(); d.setDate(d.getDate()-n); return d.toISOString().slice(0,10); }
 
-function normalizePhone(phone){ return String(phone || '').replace(/\D/g, ''); }
-function phoneToEmail(phone){ return normalizePhone(phone) + AUTH_EMAIL_SUFFIX; }
-function getAccounts(){ try { return JSON.parse(localStorage.getItem(ACCOUNTS_KEY) || '{}'); } catch(e){ return {}; } }
-function saveAccounts(accounts){ localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts)); }
+function getCurrentUser(){
+  try{
+    const raw = localStorage.getItem(LOCAL_USER_KEY);
+    if(!raw) return null;
+    const profile = JSON.parse(raw);
+    return (profile && profile.id) ? profile : null;
+  }catch(e){ return null; }
+}
 function persistCurrentUser(){
   if(!currentUser) return;
-  const accounts = getAccounts();
-  const phone = normalizePhone(currentUser.phone || currentUser.mobile || '');
-  if(!phone) return;
-  accounts[phone] = {
-    id: currentUser.id || phone,
+  localStorage.setItem(LOCAL_USER_KEY, JSON.stringify({
+    id: currentUser.id,
     name: currentUser.name || 'User',
-    phone: phone,
-    password: currentUser.password || '',
     chats: Array.isArray(currentUser.chats) ? currentUser.chats : [],
     createdAt: currentUser.createdAt || new Date().toISOString()
-  };
-  saveAccounts(accounts);
+  }));
 }
-function getCurrentUser(){
-  const phone = localStorage.getItem(ACTIVE_ACCOUNT_KEY);
-  if(!phone) return null;
-  const accounts = getAccounts();
-  const profile = accounts[phone] || null;
-  if(profile && profile.name){
-    return profile;
-  }
-  return null;
-}
-function setActiveUser(phone){ localStorage.setItem(ACTIVE_ACCOUNT_KEY, normalizePhone(phone)); }
 function getUserChats(){ return Array.isArray(currentUser && currentUser.chats) ? currentUser.chats : []; }
 function saveCurrentChatSession(){
   if(!currentUser || !currentChatSession) return;
@@ -1109,27 +1080,12 @@ function ensureAuthUi(){
   if(currentUser){
     overlay.classList.add('hidden');
     app.style.display = 'grid';
-    if(currentUserLabel) currentUserLabel.textContent = currentUser.name || currentUser.phone;
+    if(currentUserLabel) currentUserLabel.textContent = currentUser.name || 'User';
   } else {
     overlay.classList.remove('hidden');
     app.style.display = 'none';
     if(currentUserLabel) currentUserLabel.textContent = 'Guest';
   }
-}
-function setAuthMode(nextMode){
-  authMode = nextMode;
-  const authTitle = document.getElementById('authTitle');
-  const authModeLabel = document.getElementById('authModeLabel');
-  const submitBtn = document.getElementById('authSubmitBtn');
-  const switchBtn = document.getElementById('switchModeBtn');
-  const nameWrap = document.getElementById('authNameWrap');
-  if(authTitle) authTitle.textContent = nextMode === 'login' ? 'Welcome back' : 'Create your account';
-  if(authModeLabel) authModeLabel.textContent = nextMode === 'login' ? 'Login' : 'Sign Up';
-  if(submitBtn) submitBtn.textContent = nextMode === 'login' ? 'Login' : 'Create account';
-  if(switchBtn) switchBtn.textContent = nextMode === 'login' ? 'Create account' : 'Login';
-  if(nameWrap) nameWrap.style.display = nextMode === 'signup' ? 'block' : 'none';
-  const message = document.getElementById('authMessage');
-  if(message) message.textContent = '';
 }
 function showAuthMessage(message, isError){
   const el = document.getElementById('authMessage');
@@ -1137,177 +1093,32 @@ function showAuthMessage(message, isError){
   el.textContent = message || '';
   el.style.color = isError ? 'var(--red)' : 'var(--green)';
 }
-async function handleAuthSubmit(){
-  const phoneInput = document.getElementById('authPhone');
-  const passInput = document.getElementById('authPassword');
+function handleAuthSubmit(){
   const nameInput = document.getElementById('authName');
-  if(!phoneInput || !passInput) return;
-
-  const phone = normalizePhone(phoneInput.value);
-  const password = (passInput.value || '').trim();
-  const email = phoneToEmail(phone);
-
-  if(!phone || phone.length < 7){ showAuthMessage('Enter a valid phone number.', true); return; }
-  if(!password){ showAuthMessage('Enter your password.', true); return; }
-
-  const accounts = getAccounts();
-  const localSnapshot = accounts[phone] || null;
-
-  try{
-    if(authMode === 'login'){
-      let data = null, error = null;
-      try{
-        const res = await sb.auth.signInWithPassword({ email, password });
-        data = res.data; error = res.error;
-      }catch(networkErr){
-        // Supabase ma la gaadhi karo (network/CSP/mobile khalad) — isticmaal xogta locally kaydsan
-        console.error('signInWithPassword network failure, falling back to local account', networkErr);
-        error = networkErr;
-      }
-      if(error){
-        const fallbackAccount = localSnapshot && localSnapshot.password === password ? localSnapshot : null;
-        if(!fallbackAccount){
-          const isNetworkIssue = !error.status && !error.code;
-          showAuthMessage(isNetworkIssue ? 'Internetka lama gaadhi karo hadda. Hubi xiriirka, ama isku day mar kale.' : 'Invalid phone number or password.', true);
-          return;
-        }
-        currentUser = { ...fallbackAccount, id: fallbackAccount.id || phone };
-        setActiveUser(phone);
-        persistCurrentUser();
-      } else {
-        const user = data.user;
-        const profileName = user?.user_metadata?.full_name || user?.user_metadata?.name || (localSnapshot && localSnapshot.name) || 'User';
-        const profile = {
-          id: user?.id || phone,
-          name: profileName,
-          phone: phone,
-          password: password,
-          chats: Array.isArray(localSnapshot && localSnapshot.chats) ? localSnapshot.chats : [],
-          createdAt: localSnapshot && localSnapshot.createdAt ? localSnapshot.createdAt : new Date().toISOString()
-        };
-        currentUser = profile;
-        setActiveUser(phone);
-        persistCurrentUser();
-      }
-
-      ensureAuthUi();
-      const chats = getUserChats();
-      if(chats.length){
-        currentChatSession = chats[0];
-        loadSession(currentChatSession.id);
-      } else {
-        createNewChatSession();
-      }
-      renderHistoryList();
-      showAuthMessage('Logged in successfully.', false);
-      return;
-    }
-
-    const fullName = (nameInput ? nameInput.value : '').trim();
-    if(!fullName){ showAuthMessage('Please enter your full name.', true); return; }
-
-    if(localSnapshot){
-      showAuthMessage('This phone number already exists. Please log in instead.', true);
-      setAuthMode('login');
-      return;
-    }
-
-    let data = null, error = null, networkFailure = false;
-    try{
-      const res = await sb.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: fullName,
-            phone: phone,
-            created_at: new Date().toISOString()
-          }
-        }
-      });
-      data = res.data; error = res.error;
-    }catch(networkErr){
-      // Supabase ma la gaadhi karo — samee account offline ah oo device-kan ku shaqeeya
-      console.error('signUp network failure, creating local-only account', networkErr);
-      networkFailure = true;
-    }
-
-    if(error && !networkFailure){
-      showAuthMessage(error.message || 'Account creation failed.', true);
-      return;
-    }
-
-    const user = data?.user;
-    const signedInSession = data?.session;
-
-    if(user){
-      await sb.auth.updateUser({
-        data: {
-          full_name: fullName,
-          phone: phone,
-          created_at: new Date().toISOString()
-        }
-      }).catch(function(){ /* ignore metadata update failure */ });
-    }
-
-    const newAccount = {
-      id: user ? user.id : phone,
-      name: fullName,
-      phone: phone,
-      password: password,
-      chats: [],
-      createdAt: new Date().toISOString()
-    };
-
-    accounts[phone] = newAccount;
-    saveAccounts(accounts);
-    currentUser = newAccount;
-    setActiveUser(phone);
-    ensureAuthUi();
-    createNewChatSession();
-    renderHistoryList();
-    if(networkFailure){
-      showAuthMessage('Account-kaaga waa la abuuray si offline ah (internetku ma jirin). Wuu shaqeynayaa device-kan.', false);
-    } else if(!signedInSession && data?.user){
-      showAuthMessage('Account created. Sign in with the same phone and password to continue.', false);
-    } else {
-      showAuthMessage('Account created successfully.', false);
-    }
-  }catch(err){
-    console.error('handleAuthSubmit error', err);
-    showAuthMessage(err && err.message ? err.message : 'Authentication failed.', true);
-  }
+  const fullName = ((nameInput ? nameInput.value : '').trim()) || 'User';
+  currentUser = {
+    id: newUUID(),
+    name: fullName,
+    chats: [],
+    createdAt: new Date().toISOString()
+  };
+  persistCurrentUser();
+  ensureAuthUi();
+  createNewChatSession();
+  renderHistoryList();
 }
-async function logoutCurrentUser(){
-  try{
-    const { error } = await sb.auth.signOut();
-    if(error){ console.error('signOut failed', error); }
-  }catch(err){
-    console.error('signOut exception', err);
-  }
-
+function logoutCurrentUser(){
   currentUser = null;
   currentChatSession = null;
   currentSessionId = null;
   aiConversation = [];
-  localStorage.removeItem(ACTIVE_ACCOUNT_KEY);
-  setAuthMode('login');
+  localStorage.removeItem(LOCAL_USER_KEY);
   ensureAuthUi();
-
-  const authPhone = document.getElementById('authPhone');
-  const authPass = document.getElementById('authPassword');
-  const authName = document.getElementById('authName');
-  if(authPhone) authPhone.value = '';
-  if(authPass) authPass.value = '';
-  if(authName) authName.value = '';
+  const authNameInput = document.getElementById('authName');
+  if(authNameInput) authNameInput.value = '';
   if(chatLog) chatLog.innerHTML = '';
-  showAuthMessage('Logged out successfully.', false);
+  showAuthMessage('', false);
 }
-
-function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
-function todayStr(){ return new Date().toISOString().slice(0,10); }
-function daysAgo(n){ const d = new Date(); d.setDate(d.getDate()-n); return d.toISOString().slice(0,10); }
-
 async function sbSelectAll(table, orderCol){
   const { data, error } = await sb.from(table).select('*').order(orderCol || 'inserted_at', { ascending:true });
   if(error){ console.error(table, error); return []; }
@@ -1369,22 +1180,31 @@ async function loadChatHistory(){
   }
 }
 
+function withTimeout(promise, ms, label){
+  let timer;
+  const timeout = new Promise(function(_, reject){
+    timer = setTimeout(function(){ reject(new Error((label || 'Request') + ' timed out')); }, ms);
+  });
+  return Promise.race([promise, timeout]).finally(function(){ clearTimeout(timer); });
+}
+
 async function loadAllData(){
   try{
-    await initSession();
-    const [c, p, r, s] = await Promise.all([
+    await withTimeout(initSession(), 6000, 'Session init');
+    const [c, p, r, s] = await withTimeout(Promise.all([
       sbSelectAll('csco_customers','created_at'),
       sbSelectAll('csco_projects','inserted_at'),
       sbSelectAll('csco_revenue','date'),
       sb.from('csco_settings').select('*').eq('id',1).single(),
       loadChatHistory()
-    ]);
+    ]), 9000, 'Data load');
     customers = c; projects = p; revenue = r;
     if(s && s.data) settings = s.data;
     dataReady = true;
     setDbStatus(true);
   }catch(err){
     console.error('loadAllData failed', err);
+    if(!currentSessionId) currentSessionId = newUUID();
     dataReady = false;
     setDbStatus(false);
   }
@@ -2258,7 +2078,6 @@ window.addEventListener('appinstalled', function(){
 
 function bindAuthHandlers(){
   const authSubmitBtn = document.getElementById('authSubmitBtn');
-  const switchModeBtn = document.getElementById('switchModeBtn');
   const logoutBtn = document.getElementById('logoutBtn');
   const newChatSidebarBtn = document.getElementById('newChatSidebarBtn');
   const menuToggleBtn = document.getElementById('menuToggleBtn');
@@ -2266,7 +2085,6 @@ function bindAuthHandlers(){
   const sidebarEl = document.getElementById('sidebar');
 
   if(authSubmitBtn){ authSubmitBtn.onclick = handleAuthSubmit; }
-  if(switchModeBtn){ switchModeBtn.onclick = function(){ setAuthMode(authMode === 'login' ? 'signup' : 'login'); }; }
   if(logoutBtn){ logoutBtn.onclick = logoutCurrentUser; }
   if(newChatSidebarBtn){ newChatSidebarBtn.onclick = function(){ if(currentUser) createNewChatSession(); }; }
 
@@ -2361,33 +2179,7 @@ async function initializeApp(){
   bindAuthHandlers();
   keepComposerVisible();
 
-  let session = null;
-  try{
-    const sessionRes = await sb.auth.getSession();
-    session = sessionRes.data ? sessionRes.data.session : null;
-    if(sessionRes.error){ console.error('Supabase session error', sessionRes.error); }
-  }catch(sessionErr){
-    // Internetka ma jiro ama Supabase lama gaadhi karo — sii wad, isticmaal xogta locally kaydsan
-    console.error('getSession network failure, continuing with local account only', sessionErr);
-  }
-
-  if(session && session.user){
-    const localProfile = getCurrentUser();
-    const userMeta = session.user.user_metadata || {};
-    const phoneFromMeta = normalizePhone(userMeta.phone || localProfile?.phone || '');
-    currentUser = {
-      id: session.user.id,
-      name: userMeta.full_name || userMeta.name || localProfile?.name || 'User',
-      phone: phoneFromMeta || (localProfile && localProfile.phone) || '',
-      password: localProfile ? (localProfile.password || '') : '',
-      chats: Array.isArray(localProfile && localProfile.chats) ? localProfile.chats : [],
-      createdAt: localProfile && localProfile.createdAt ? localProfile.createdAt : new Date().toISOString()
-    };
-    if(currentUser.phone){ setActiveUser(currentUser.phone); }
-    persistCurrentUser();
-  } else {
-    currentUser = getCurrentUser();
-  }
+  currentUser = getCurrentUser();
 
   if(currentUser){
     ensureAuthUi();
@@ -2400,7 +2192,6 @@ async function initializeApp(){
     }
   } else {
     ensureAuthUi();
-    setAuthMode('login');
   }
 
   const minDelay = new Promise(function(res){ setTimeout(res, 600); });
@@ -2422,34 +2213,6 @@ async function initializeApp(){
     window.__csaiPulseInterval = setInterval(pulseTick, 2600);
   }
 }
-
-sb.auth.onAuthStateChange(function(event, session){
-  if(event === 'SIGNED_IN' && session && session.user){
-    const userMeta = session.user.user_metadata || {};
-    const phone = normalizePhone(userMeta.phone || localStorage.getItem(ACTIVE_ACCOUNT_KEY) || '');
-    currentUser = {
-      id: session.user.id,
-      name: userMeta.full_name || userMeta.name || 'User',
-      phone: phone,
-      password: '',
-      chats: getCurrentUser() ? getCurrentUser().chats || [] : [],
-      createdAt: new Date().toISOString()
-    };
-    if(phone){ setActiveUser(phone); }
-    persistCurrentUser();
-    ensureAuthUi();
-  }
-  if(event === 'SIGNED_OUT'){
-    currentUser = null;
-    currentChatSession = null;
-    currentSessionId = null;
-    aiConversation = [];
-    localStorage.removeItem(ACTIVE_ACCOUNT_KEY);
-    ensureAuthUi();
-    if(chatLog) chatLog.innerHTML = '';
-    setAuthMode('login');
-  }
-});
 
 window.addEventListener('resize', syncViewportHeight);
 window.addEventListener('orientationchange', syncViewportHeight);
